@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Indonesia Electricity Plan - Capacity & Production</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1em;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2em;
+      margin-bottom: 1em;
+    }
+    .filter-group {
+      flex: 1 1 200px;
+    }
+    .filter-actions {
+      margin-top: 1em;
+      width: 100%; /* Ensure button takes full width on small screens */
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+      max-height: 400px;
+    }
+    @media (max-width: 600px) {
+      .filters {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Indonesia Electricity Plan (2024–2030)</h2>
+  <div class="filters">
+    <div class="filter-group">
+      <strong>Toggle Years:</strong><br />
+      <label><input type="checkbox" id="year2024" checked onchange="filterData()"> 2024</label><br>
+      <label><input type="checkbox" id="year2025" checked onchange="filterData()"> 2025</label><br>
+      <label><input type="checkbox" id="year2026" checked onchange="filterData()"> 2026</label><br>
+      <label><input type="checkbox" id="year2027" checked onchange="filterData()"> 2027</label><br>
+      <label><input type="checkbox" id="year2028" checked onchange="filterData()"> 2028</label><br>
+      <label><input type="checkbox" id="year2029" checked onchange="filterData()"> 2029</label><br>
+      <label><input type="checkbox" id="year2030" checked onchange="filterData()"> 2030</label><br>
+    </div>
+    <div class="filter-group">
+      <strong>Toggle Fuel Types:</strong><br />
+      <label><input type="checkbox" id="fuelCoal" checked onchange="filterData()"> Coal</label><br>
+      <label><input type="checkbox" id="fuelBioenergy" checked onchange="filterData()"> Bioenergy</label><br>
+      <label><input type="checkbox" id="fuelGeothermal" checked onchange="filterData()"> Geothermal</label><br>
+      <label><input type="checkbox" id="fuelGas" checked onchange="filterData()"> Gas</label><br>
+      <label><input type="checkbox" id="fuelHydro" checked onchange="filterData()"> Hydro</label><br>
+      <label><input type="checkbox" id="fuelWind" checked onchange="filterData()"> Wind</label><br>
+      <label><input type="checkbox" id="fuelSolar" checked onchange="filterData()"> Solar</label><br>
+      <label><input type="checkbox" id="fuelOcean" checked onchange="filterData()"> Ocean</label><br>
+      <label><input type="checkbox" id="fuelWasteHeat" checked onchange="filterData()"> WasteHeat</label><br>
+      <label><input type="checkbox" id="fuelDiesel" checked onchange="filterData()"> Diesel</label><br>
+    </div>
+    <div class="filter-actions">
+      <button onclick="resetFilters()">Reset Filters</button>
+    </div>
+  </div>
+
+  <canvas id="capacityChart"></canvas>
+  <canvas id="productionChart"></canvas>
+
+  <script>
+    const originalCapacityData = {
+      "Coal": {"2024": 51, "2025": 52, "2026": 53, "2027": 54, "2028": 55, "2029": 56, "2030": 57},
+      "Bioenergy": {"2024": 3, "2025": 3.5, "2026": 4, "2027": 4.5, "2028": 5, "2029": 5.5, "2030": 6},
+      "Geothermal": {"2024": 2, "2025": 2.5, "2026": 3, "2027": 3.5, "2028": 4, "2029": 4.5, "2030": 5},
+      "Gas": {"2024": 24, "2025": 25, "2026": 26, "2027": 27, "2028": 28, "2029": 29, "2030": 30},
+      "Hydro": {"2024": 7, "2025": 7.5, "2026": 8, "2027": 8.5, "2028": 9, "2029": 9.5, "2030": 10},
+      "Wind": {"2024": 0, "2025": 0.2, "2026": 0.5, "2027": 1, "2028": 1.5, "2029": 2, "2030": 2.5},
+      "Solar": {"2024": 2, "2025": 3, "2026": 4, "2027": 5, "2028": 6, "2029": 7, "2030": 8},
+      "Ocean": {"2024": 0, "2025": 0, "2026": 0.1, "2027": 0.2, "2028": 0.3, "2029": 0.4, "2030": 0.5},
+      "WasteHeat": {"2024": 0, "2025": 0, "2026": 0, "2027": 0, "2028": 0, "2029": 0, "2030": 0},
+      "Diesel": {"2024": 6, "2025": 6, "2026": 6, "2027": 6, "2028": 6, "2029": 6, "2030": 6}
+    };
+
+    const originalProductionData = {
+      "Coal": {"2024": 300, "2025": 310, "2026": 320, "2027": 330, "2028": 340, "2029": 350, "2030": 360},
+      "Bioenergy": {"2024": 20, "2025": 22, "2026": 24, "2027": 26, "2028": 28, "2029": 30, "2030": 32},
+      "Geothermal": {"2024": 15, "2025": 16, "2026": 17, "2027": 18, "2028": 19, "2029": 20, "2030": 21},
+      "Gas": {"2024": 200, "2025": 205, "2026": 210, "2027": 215, "2028": 220, "2029": 225, "2030": 230},
+      "Hydro": {"2024": 50, "2025": 52, "2026": 54, "2027": 56, "2028": 58, "2029": 60, "2030": 62},
+      "Wind": {"2024": 1, "2025": 3, "2026": 5, "2027": 7, "2028": 9, "2029": 11, "2030": 13},
+      "Solar": {"2024": 4, "2025": 6, "2026": 8, "2027": 10, "2028": 12, "2029": 14, "2030": 16},
+      "Ocean": {"2024": 0, "2025": 0, "2026": 0.2, "2027": 0.4, "2028": 0.6, "2029": 0.8, "2030": 1},
+      "WasteHeat": {"2024": 0, "2025": 0, "2026": 0, "2027": 0, "2028": 0, "2029": 0, "2030": 0},
+      "Diesel": {"2024": 30, "2025": 30, "2026": 30, "2027": 30, "2028": 30, "2029": 30, "2030": 30}
+    };
+
+    const allYears = ["2024", "2025", "2026", "2027", "2028", "2029", "2030"];
+    const allFuels = Object.keys(originalCapacityData);
+
+    function getDatasets(dataObj, fuels, years) {
+      return fuels.map(fuel => ({
+        label: fuel,
+        data: years.map(year => dataObj[fuel][year] || 0),
+        backgroundColor: getColor(fuel),
+        stack: "stack1"
+      }));
+    }
+
+    function getColor(fuel) {
+      const colors = {
+        Coal: "#6D4C41", Gas: "#FF8F00", Hydro: "#0288D1", Solar: "#FDD835",
+        Wind: "#81C784", Geothermal: "#D84315", Bioenergy: "#8D6E63",
+        Diesel: "#17becf", Ocean: "#7f7f7f", WasteHeat: "#bcbd22"
+      };
+      return colors[fuel] || "#888";
+    }
+
+    const ctx1 = document.getElementById("capacityChart").getContext("2d");
+    const ctx2 = document.getElementById("productionChart").getContext("2d");
+
+    let capacityChart = new Chart(ctx1, {
+      type: "bar",
+      data: {
+        labels: allYears,
+        datasets: getDatasets(originalCapacityData, allFuels, allYears)
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: "Installed Capacity by Fuel Type (GW)"
+          },
+          legend: {
+            position: "top"
+          }
+        },
+        scales: {
+          x: { stacked: true },
+          y: {
+            stacked: true,
+            title: { display: true, text: "GW" }
+          }
+        }
+      }
+    });
+
+    let productionChart = new Chart(ctx2, {
+      type: "bar",
+      data: {
+        labels: allYears,
+        datasets: getDatasets(originalProductionData, allFuels, allYears)
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: "Electricity Production by Fuel Type (TWh)"
+          },
+          legend: {
+            position: "top"
+          }
+        },
+        scales: {
+          x: { stacked: true },
+          y: {
+            stacked: true,
+            title: { display: true, text: "TWh" }
+          }
+        }
+      }
+    });
+
+    function filterData() {
+      const selectedYears = allYears.filter(y => document.getElementById("year" + y).checked);
+      const selectedFuels = allFuels.filter(f => document.getElementById("fuel" + f).checked);
+
+      capacityChart.data.labels = selectedYears;
+      capacityChart.data.datasets = getDatasets(originalCapacityData, selectedFuels, selectedYears);
+      capacityChart.update();
+
+      productionChart.data.labels = selectedYears;
+      productionChart.data.datasets = getDatasets(originalProductionData, selectedFuels, selectedYears);
+      productionChart.update();
+    }
+
+    function resetFilters() {
+      // Check all year checkboxes
+      allYears.forEach(year => {
+        document.getElementById("year" + year).checked = true;
+      });
+
+      // Check all fuel type checkboxes
+      allFuels.forEach(fuel => {
+        document.getElementById("fuel" + fuel).checked = true;
+      });
+
+      // Re-apply filters to update charts
+      filterData();
+    }
+  </script>
+</body>
+</html>
