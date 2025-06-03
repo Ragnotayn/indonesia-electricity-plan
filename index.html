@@ -23,16 +23,41 @@
       margin-top: 1em;
       width: 100%; /* Ensure button takes full width on small screens */
     }
+
+    /* Original canvas styles - slightly adjusted */
     canvas {
-      width: 100% !important;
-      height: auto !important;
-      max-height: 400px;
+      width: 100% !important; /* Keep width at 100% */
+      height: auto !important; /* Keep height automatic */
+      /* max-height: 400px;  This often causes issues on mobile */
     }
-    @media (max-width: 600px) {
+
+    /* Media query for smaller screens */
+    @media (max-width: 768px) { /* Adjust breakpoint as needed */
       .filters {
         flex-direction: column;
+        gap: 1em; /* Reduce gap on smaller screens */
+      }
+      .filter-group {
+        flex: 1 1 auto; /* Allow groups to stack naturally */
+      }
+      .filter-actions {
+        margin-top: 0.5em; /* Adjust margin for button */
+      }
+      canvas {
+        /* On smaller screens, remove max-height constraint */
+        max-height: unset !important; /* This is key to allow scaling */
+        /* You might want to set a min-height if charts become too squashed */
+        /* min-height: 250px; */
       }
     }
+
+    /* You might want to adjust the max-height for larger screens if needed */
+    @media (min-width: 769px) {
+        canvas {
+            max-height: 400px; /* Re-apply max-height for larger screens if desired */
+        }
+    }
+
   </style>
 </head>
 <body>
