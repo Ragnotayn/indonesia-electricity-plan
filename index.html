@@ -24,38 +24,48 @@
       width: 100%; /* Ensure button takes full width on small screens */
     }
 
-    /* Original canvas styles - slightly adjusted */
-    canvas {
-      width: 100% !important; /* Keep width at 100% */
-      height: auto !important; /* Keep height automatic */
-      /* max-height: 400px;  This often causes issues on mobile */
+    /* New styles for chart container */
+    .chart-container {
+      position: relative; /* Needed for padding-bottom trick */
+      width: 100%;
+      /* This padding-bottom creates the aspect ratio */
+      /* For 16:9 aspect ratio, use 56.25% (9/16 * 100) */
+      /* For 4:3 aspect ratio, use 75% (3/4 * 100) */
+      /* You can adjust this value to control the height relative to width */
+      padding-bottom: 60%; /* Adjust this percentage for desired aspect ratio */
+      margin-bottom: 1em; /* Add some space between charts and other elements */
     }
 
-    /* Media query for smaller screens */
-    @media (max-width: 768px) { /* Adjust breakpoint as needed */
+    .chart-container canvas {
+      position: absolute; /* Allows canvas to fill the container */
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    @media (max-width: 768px) {
       .filters {
         flex-direction: column;
-        gap: 1em; /* Reduce gap on smaller screens */
+        gap: 1em;
       }
       .filter-group {
-        flex: 1 1 auto; /* Allow groups to stack naturally */
+        flex: 1 1 auto;
       }
       .filter-actions {
-        margin-top: 0.5em; /* Adjust margin for button */
+        margin-top: 0.5em;
       }
-      canvas {
-        /* On smaller screens, remove max-height constraint */
-        max-height: unset !important; /* This is key to allow scaling */
-        /* You might want to set a min-height if charts become too squashed */
-        min-height: 250px;
+      /* You might want a different aspect ratio for mobile if needed */
+      .chart-container {
+        padding-bottom: 80%; /* Perhaps a taller chart on mobile */
       }
     }
 
-    /* You might want to adjust the max-height for larger screens if needed */
-    @media (min-width: 769px) {
-        canvas {
-            max-height: 400px; /* Re-apply max-height for larger screens if desired */
-        }
+    /* Optional: Re-apply a max-height for very large screens if charts get too tall */
+    @media (min-width: 1200px) {
+      .chart-container {
+        max-height: 500px; /* Limits the max height of the container */
+        /* If max-height is used, the padding-bottom trick might be overridden
+           so ensure the canvas inside still scales. */
+      }
     }
 
   </style>
@@ -91,8 +101,12 @@
     </div>
   </div>
 
-  <canvas id="capacityChart"></canvas>
-  <canvas id="productionChart"></canvas>
+  <div class="chart-container">
+    <canvas id="capacityChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="productionChart"></canvas>
+  </div>
 
   <script>
     const originalCapacityData = {
@@ -142,6 +156,7 @@
       return colors[fuel] || "#888";
     }
 
+    // Pass the canvas element directly to Chart constructor
     const ctx1 = document.getElementById("capacityChart").getContext("2d");
     const ctx2 = document.getElementById("productionChart").getContext("2d");
 
@@ -153,6 +168,7 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false, // THIS IS CRUCIAL FOR CONTAINER-BASED SCALING
         plugins: {
           title: {
             display: true,
@@ -180,6 +196,7 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false, // THIS IS CRUCIAL FOR CONTAINER-BASED SCALING
         plugins: {
           title: {
             display: true,
